@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  hindi-asr-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hindi-asr-api
+    ports:
+      - "8000:8000"
+    environment:
+      - NEMO_MODEL_PATH=/app/models/stt_hi_conformer_ctc_medium.nemo
+      - KENLM_MODEL_PATH=/app/models/stt_hi_conformer_ctc_medium_kenlm.bin
+      - MAX_FILE_SIZE=52428800  # 50MB
+      - MAX_DURATION=60
+      - MAX_WORKERS=2
+    volumes:
+      # Mount models directory if you want to update models without rebuilding
+      - ./models:/app/models:ro
+      # Optional: Mount temp directory for better performance
+      - temp_storage:/app/temp
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Resource limits (adjust based on your needs)
+    mem_limit: 4g
+    cpus: 2.0
+    mem_reservation: 2g
+    networks:
+      - hindi-asr-network
+
+volumes:
+  temp_storage:
+
+networks:
+  hindi-asr-network:
+    driver: bridge
